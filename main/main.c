@@ -9,58 +9,43 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_mac.h"
-#include "/home/caincil/esp-idf/components/hal/include/hal/uart_types.h"
 
-#include "uart.h"
+#include "nvs_flash.h"
+#include "esp_event.h"
+#include "wifi.h"
 #include "motors.h"
-
 static const char *TAG = "MAIN";
-#define UART_NUM            UART_NUM_0
-#define UART_BUF_SIZE       128
 
-void mcpwm_loop(void *arg)
-{
-    // Конфигурация пинов по вашей распайке:
-    motor_config_t cfg = {
-        .left  = {
-            .pin_en   = GPIO_NUM_26,  // ENA ← D26
-            .pin_dir1 = GPIO_NUM_33,  // IN1 ← D33
-            .pin_dir2 = GPIO_NUM_27   // IN2 ← D27
-        },
-        .right = {
-            .pin_en   = GPIO_NUM_15,  // ENB ← D15
-            .pin_dir1 = GPIO_NUM_32,  // IN3 ← D32
-            .pin_dir2 = GPIO_NUM_25   // IN4 ← D25
-        }
-    };
-
-    mcpwm_initialize(&cfg);
-    uart_init();
-
-    uint8_t buf[UART_BUF_SIZE + 1];
-    int len;
-    float speed = 0.0f;
-    int16_t dir = 0;
-
-    ESP_LOGI(TAG, "Entering main loop, waiting for UART commands L:<spd>,D:<dir>");
-
-  while (1) {
-        int len = uart_read_bytes(UART_NUM, buf, UART_BUF_SIZE, pdMS_TO_TICKS(100));
-        if (len > 0) {
-            buf[len] = '\0';
-            if (sscanf((char*)buf, "S:%f,D:%hd", &speed, &dir) == 2) {
-                mcpwm_set_direction(speed, dir, &cfg);
-            } else {
-                ESP_LOGW(TAG, "Bad format");
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-   
-}
+// Your actual wiring:
+//  ENA: GPIO26, IN1: GPIO33, IN2: GPIO27
+//  ENB: GPIO15, IN3: GPIO32, IN4: GPIO25
+static motor_config_t motor_cfg = {
+    .left  = { .pin_en   = GPIO_NUM_26,
+               .pin_dir1 = GPIO_NUM_33,
+               .pin_dir2 = GPIO_NUM_27 },
+    .right = { .pin_en   = GPIO_NUM_15,
+               .pin_dir1 = GPIO_NUM_32,
+               .pin_dir2 = GPIO_NUM_25 }
+};
 
 void app_main(void)
 {
-    esp_log_level_set("*", ESP_LOG_DEBUG);
-    xTaskCreate(mcpwm_loop, "MotorControlLoop", 4096, NULL, 2, NULL);
+    esp_log_level_set("*", ESP_LOG_INFO);
+    ESP_LOGI(TAG, "Starting motor & Wi-Fi init");
+
+    // 1) initialize PWM / GPIO for motors
+    mcpwm_initialize(&motor_cfg);
+
+    // 2) initialize Wi-Fi and wait for connection
+    wifi_init_sta();
+
+    // 3) start the TCP-server task, passing &motor_cfg
+    xTaskCreate(
+        tcp_server_task,
+        "tcp_server",
+        4096,
+        (void*)&motor_cfg,
+        5,
+        NULL
+    );
 }

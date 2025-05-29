@@ -19,7 +19,8 @@
     "mcpwm.h": "c",
     "stdio.h": "c",
     "uart.h": "c",
-    "motors.h": "c"
+    "motors.h": "c",
+    "esp_event.h": "c"
   },
   "idf.flashType": "UART"
 }
