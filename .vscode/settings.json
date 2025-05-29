@@ -1,0 +1,25 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/home/caincil/esp-idf",
+  "idf.pythonInstallPath": "/usr/bin/python3",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.port": "/dev/ttyUSB0",
+  "idf.toolsPath": "/home/caincil/esp-idf/tools",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "files.associations": {
+    "esp_mac.h": "c",
+    "esp_log.h": "c",
+    "task.h": "c",
+    "math.h": "c",
+    "gpio.h": "c",
+    "mcpwm.h": "c",
+    "stdio.h": "c",
+    "uart.h": "c",
+    "motors.h": "c"
+  },
+  "idf.flashType": "UART"
+}
